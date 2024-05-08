@@ -10,9 +10,9 @@ $$
 $$
 
 where:
-- $ a(x) $ is the diffusion coefficient generated from a random Fourier field
-- $ f(x) $ is a constant forcing function throughout the domain
-- $ u(x) $ is the solution field to be learned
+- $a(x)$ is the diffusion coefficient generated from a random Fourier field
+- $f(x)$ is a constant forcing function throughout the domain
+- $u(x)$ is the solution field to be learned
 
 The problem is subject to the Dirichlet boundary condition:
 
@@ -65,11 +65,11 @@ u(0,t) = 0, \quad u(1,t) = \bar{u}(t)
 $$
 
 Where:
-- $ E(x) $ is Young's modulus
-- $ v(x) $ is viscosity
-- $ \epsilon(x,t) $ is the strain field
-- $ \sigma(x,t) $ is the stress field
-- $ u(x,t) $ is the displacement field
+- $E(x)$ is Young's modulus
+- $v(x)$ is viscosity
+- $\epsilon(x,t)$ is the strain field
+- $\sigma(x,t)$ is the stress field
+- $u(x,t)$ is the displacement field
 
 The problem considers a 3-phase composite material, where \( E(x) \) and \( v(x) \) are piecewise constant functions with 3 different values, as shown below:
 
