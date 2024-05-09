@@ -15,6 +15,6 @@ anim = @animate for u in eachslice(u_first, dims=1)
 end
 
 # Save the animation to file
-gif(anim, "true_darcy_flow.gif", fps=5)
+gif(anim, "figures/true_darcy_flow.gif", fps=5)
 
 

@@ -1,7 +1,9 @@
-# OperatorLearning
+# Neural Operator Learning
 This repository hosts two of my projects focused on operator learning for complex material systems. It includes implementations for learning solution operators for 2D Darcy flow problems and macroscopic constitutive models for composite materials. 
 
-# 1. 2D Darcy Flow Problem
+# 1. The 2D Darcy Flow Problem
+
+![True Darcy Flow](figures/true_darcy_flow.gif)
 
 The problem considers learning the solution operator of the 2D Darcy flow problem, which is governed by the following equation:
 
@@ -26,7 +28,7 @@ $$
 a \mapsto u
 $$
 
-using the operator learning methods discussed in class.
+using the Fourier Nueral Operator (FNO) presented in the paper: [Fourier Neural Operator for Parametric Partial Differential Equations](https://arxiv.org/abs/2010.08895).
 
 # 2. Unit Cell Problem with Viscoelastic Constitutive Relation
 
