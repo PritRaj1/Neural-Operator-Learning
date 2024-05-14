@@ -1,18 +1,12 @@
 module loaders
 
 include("./data_reader.jl")
-include("./data_transforms.jl")
+include("../utils.jl")
 using .MATFileLoader: load_darcy_data
-using .Normalisers: UnitGaussianNormaliser, encode, decode
+using .UTILS: UnitGaussianNormaliser, encode, decode
 using Flux
-using ConfParser
 
-conf = ConfParse("Darcy_HPs.ini")
-parse_conf!(conf)
-
-batch_size = retrieve(conf, "DataLoader", "batch_size", Int)
-
-function get_darcy_loader()
+function get_darcy_loader(batch_size=32)
     a_train, u_train, a_test, u_test = load_darcy_data()
 
     a_normaliser = UnitGaussianNormaliser(a_train)

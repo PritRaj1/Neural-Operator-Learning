@@ -1,9 +1,26 @@
-module Normalisers
+module UTILS
 
-export UnitGaussianNormaliser, encode, decode
+export LpLoss, UnitGaussianNormaliser, encode, decode, log_loss
 
 using Statistics
 
+### Lp Norm ###
+struct LpLoss
+    p::Float64
+end
+
+# Constructor
+function LpLoss(p::Float64)
+    return LpLoss(p)
+end
+
+# Compute the loss
+function (loss::LpLoss)(ŷ, y)
+    return sum(abs.(ŷ .- y).^loss.p)
+end
+
+
+### Normaliser for zero mean and unit variance ###
 struct UnitGaussianNormaliser{T<:AbstractFloat}
     mean::T
     std::T
@@ -25,6 +42,13 @@ end
 # Denormalise
 function decode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
     return x .* (normaliser.std .+ normaliser.eps) .+ normaliser.mean
+end
+
+# Log the loss to CSV
+function log_loss(epoch, train_loss, test_loss)
+    open("logs/loss.csv", "a") do file
+        write(file, "$epoch,$train_loss,$test_loss\n")
+    end
 end
 
 end
