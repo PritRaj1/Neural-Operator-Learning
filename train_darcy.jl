@@ -5,9 +5,10 @@ include("src/pipeline/train.jl")
 
 using .loaders: get_darcy_loader
 using .TRAINER: train_model
-using .UTILS: LpLoss
+using .UTILS: loss_fcn
 using .ConvNN: CNN
-using Flux, Optimisers
+using Flux
+using Flux.Optimise: Adam, Descent
 using ConfParser
 
 conf = ConfParse("CNN_config.ini")
@@ -22,11 +23,11 @@ model = CNN(1, 1)
 
 # Train the model
 optimizer = Dict(
-    "adam" => Flux.setup(Adam(), model),
-    "sgd" => Flux.setup(SGD(LR), model)
+    "adam" => Flux.setup(Adam(LR), model),
+    "sgd" => Flux.setup(Descent(LR), model)
 )[optimizer_type]
-loss_fcn = LpLoss(2.0)
-model = train_model(model, train_loader, test_loader, optimizer, loss_fcn, num_epochs)
+loss = loss_fcn(2.0)
+model = train_model(model, train_loader, test_loader, optimizer, loss, num_epochs)
 
 # Save the model
 Flux.save("trained_models/CNN_model.bson", model)

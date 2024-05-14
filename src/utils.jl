@@ -1,18 +1,16 @@
 module UTILS
 
-export LpLoss, UnitGaussianNormaliser, encode, decode, log_loss
+export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss
 
 using Statistics
 
-### Lp Norm ###
+### Lp Norm Loss ###
 struct LpLoss
     p::Float64
 end
 
 # Constructor
-function LpLoss(p::Float64)
-    return LpLoss(p)
-end
+loss_fcn(p::Float64) = LpLoss(p)
 
 # Compute the loss
 function (loss::LpLoss)(ŷ, y)

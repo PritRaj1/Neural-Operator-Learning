@@ -15,13 +15,17 @@ function train_model(model, train_loader, test_loader, optimizer, loss_fn, num_e
             test_loss = 0.0
 
             # Training
-            model = Flux.train!(loss_fn, model, train_loader, optimizer) do batch_size, model, loss
-                train_loss += batch_size * loss
+            for (x, y) in train_loader
+                # Shape check
+                println(size(x))
+                gs = gradient(() -> loss_fn(model(x), y), Flux.params(model))
+                Flux.update!(optimizer, Flux.params(model), gs)
+                train_loss += loss_fn(model(x), y)
             end
 
             # Testing
-            model = Flux.test!(model, test_loader, loss_fn) do batch_size, model, loss
-                test_loss += batch_size * loss
+            for (x, y) in test_loader
+                test_loss += loss_fn(model(x), y)
             end
 
             # Print progress

@@ -26,6 +26,7 @@ act_fcn = Dict(
     "swish" => NNlib.hardswish
 )[activation]
 
+# Construct the CNN model
 function CNN(in_channels::Int, out_channels::Int)
     phi = act_fcn
     noise_fcn = x -> x .+ noise_injection * randn(size(x))
