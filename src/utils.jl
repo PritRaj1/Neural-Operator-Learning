@@ -4,17 +4,10 @@ export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss
 
 using Statistics
 
-### Lp Norm Loss ###
-struct LpLoss
-    p::Float64
-end
+p = get(ENV, "p", 2.0)
 
-# Constructor
-loss_fcn(p::Float64) = LpLoss(p)
-
-# Compute the loss
-function (loss::LpLoss)(ŷ, y)
-    return sum(abs.(ŷ .- y).^loss.p)
+function loss_fcn(m, x, y)
+    return sum(abs.(m(x) .- y).^p)
 end
 
 
@@ -43,8 +36,8 @@ function decode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
 end
 
 # Log the loss to CSV
-function log_loss(epoch, train_loss, test_loss)
-    open("logs/loss.csv", "a") do file
+function log_loss(epoch, train_loss, test_loss, model_name)
+    open("logs/$model_name.csv", "a") do file
         write(file, "$epoch,$train_loss,$test_loss\n")
     end
 end

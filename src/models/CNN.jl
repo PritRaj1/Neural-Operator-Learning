@@ -57,4 +57,6 @@ function (m::CNN)(x)
     return m.decoder(m.encoder(x))
 end
     
+Flux.@layer CNN
+
 end

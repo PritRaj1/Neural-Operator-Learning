@@ -1,12 +1,13 @@
 module TRAINER
 
 using Flux
+using Optimisers
 
 include("../utils.jl")
 
 using .UTILS: log_loss
 
-function train_model(model, train_loader, test_loader, optimizer, loss_fn, num_epochs)
+function train_model(m, train_loader, test_loader, opt_state, loss, num_epochs, model_name)
 
     @timed begin
         # Train the model
@@ -17,15 +18,13 @@ function train_model(model, train_loader, test_loader, optimizer, loss_fn, num_e
             # Training
             for (x, y) in train_loader
                 # Shape check
-                println(size(x))
-                gs = gradient(() -> loss_fn(model(x), y), Flux.params(model))
-                Flux.update!(optimizer, Flux.params(model), gs)
-                train_loss += loss_fn(model(x), y)
+                train_loss, grad = Flux.withgradient(model -> loss(model, x, y), m)
+                opt_state, m = Optimisers.update(opt_state, m, grad[1])
             end
 
             # Testing
             for (x, y) in test_loader
-                test_loss += loss_fn(model(x), y)
+                test_loss += loss(m, x, y)
             end
 
             # Print progress
@@ -34,11 +33,11 @@ function train_model(model, train_loader, test_loader, optimizer, loss_fn, num_e
             println("Epoch $epoch: train_loss = $train_loss, test_loss = $test_loss")
 
             # Log the loss
-            log_loss(epoch, train_loss, test_loss)
+            log_loss(epoch, train_loss, test_loss, model_name)
         end
     end
 
-    return model
+    return m
 end
     
 end

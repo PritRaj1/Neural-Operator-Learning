@@ -8,7 +8,7 @@ using .TRAINER: train_model
 using .UTILS: loss_fcn
 using .ConvNN: CNN
 using Flux
-using Flux.Optimise: Adam, Descent
+using Optimisers
 using ConfParser
 
 conf = ConfParse("CNN_config.ini")
@@ -16,18 +16,30 @@ parse_conf!(conf)
 batch_size = parse(Int, retrieve(conf, "DataLoader", "batch_size"))
 num_epochs = parse(Int, retrieve(conf, "Pipeline", "num_epochs"))
 optimizer_type = retrieve(conf, "Optimizer", "type")
+loss_norm_p = parse(Float32, retrieve(conf, "Loss", "p"))
 LR = parse(Float32, retrieve(conf, "Optimizer", "learning_rate"))
+
+ENV["p"] = loss_norm_p
 
 train_loader, test_loader = get_darcy_loader(batch_size)
 model = CNN(1, 1)
 
+# Create logs directory if it doesn't exist
+if !isdir("logs")
+    mkdir("logs")
+end
+
+# Create log file
+open("logs/CNN.csv", "w") do file
+    write(file, "epoch,train_loss,test_loss\n")
+end
+
 # Train the model
-optimizer = Dict(
-    "adam" => Flux.setup(Adam(LR), model),
-    "sgd" => Flux.setup(Descent(LR), model)
+opt_state = Dict(
+    "adam" => Optimisers.setup(Optimisers.Adam(LR), model),
+    "sgd" => Optimisers.setup(Optimisers.Descent(LR), model)
 )[optimizer_type]
-loss = loss_fcn(2.0)
-model = train_model(model, train_loader, test_loader, optimizer, loss, num_epochs)
+model = train_model(model, train_loader, test_loader, opt_state, loss_fcn, num_epochs, "CNN")
 
 # Save the model
 Flux.save("trained_models/CNN_model.bson", model)
