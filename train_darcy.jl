@@ -11,12 +11,15 @@ using Flux
 using Optimisers
 using ConfParser
 using CUDA
+using JLD2
 
 MODEL_NAME = "CNN"
 
 # Parse config
 conf = ConfParse(MODEL_NAME * "_config.ini")
 parse_conf!(conf)
+
+### Hyperparameters ###
 batch_size = parse(Int, retrieve(conf, "DataLoader", "batch_size"))
 num_epochs = parse(Int, retrieve(conf, "Pipeline", "num_epochs"))
 optimizer_type = retrieve(conf, "Optimizer", "type")
@@ -29,18 +32,16 @@ get_model = Dict(
 )[MODEL_NAME]
 
 train_loader, test_loader = get_darcy_loader(batch_size)
-model = get_model(1, 1) |> gpu
+model = gpu(get_model(1, 1))
 
 # Create logs directory if it doesn't exist
 if !isdir("logs")
     mkdir("logs")
 end
 
-# Create log file if it doesn't exist
-if !isfile("logs/$MODEL_NAME.csv")
-    open("logs/$MODEL_NAME.csv", "w") do file
-        write(file, "epoch,train_loss,test_loss\n")
-    end
+# Create new log file
+open("logs/$MODEL_NAME.csv", "w") do file
+    write(file, "epoch,train_loss,test_loss\n")
 end
 
 # Create trained_models directory if it doesn't exist
@@ -53,7 +54,8 @@ opt_state = Dict(
     "adam" => Optimisers.setup(Optimisers.Adam(LR), model),
     "sgd" => Optimisers.setup(Optimisers.Descent(LR), model)
 )[optimizer_type]
+
 model = train_model(model, train_loader, test_loader, opt_state, loss_fcn, num_epochs, MODEL_NAME)
 
 # Save the model
-Flux.save("trained_models/$MODEL_NAME.bson", model)
+jldsave("trained_models/$MODEL_NAME.jld2"; model)
