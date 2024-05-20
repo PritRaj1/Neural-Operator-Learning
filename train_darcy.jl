@@ -11,7 +11,7 @@ using Flux
 using Optimisers
 using ConfParser
 using CUDA
-using JLD2
+using BSON: @save
 
 MODEL_NAME = "CNN"
 
@@ -58,4 +58,5 @@ opt_state = Dict(
 model = train_model(model, train_loader, test_loader, opt_state, loss_fcn, num_epochs, MODEL_NAME)
 
 # Save the model
-jldsave("trained_models/$MODEL_NAME.jld2"; model)
+model = model |> cpu
+@save "trained_models/$MODEL_NAME.bson" model

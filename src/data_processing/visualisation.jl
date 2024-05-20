@@ -11,6 +11,7 @@ print("u: ", size(u_first))
 X, Y = [x for x in range(0, stop=1, length=32)], [y for y in range(0, stop=1, length=32)]
 
 anim = @animate for (a, u) in test_loader
+    u = u |> cpu
     u = u[:, :, 1, 1]
     contourf(X, Y, u, title="True Darcy Flow", cbar=false, color=:viridis)
 end
