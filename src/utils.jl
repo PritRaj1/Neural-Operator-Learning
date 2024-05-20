@@ -4,7 +4,7 @@ export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss
 
 using Statistics
 
-p = get(ENV, "p", 2.0)
+p = parse(Float32, get(ENV, "p", "2.0"))
 
 function loss_fcn(m, x, y)
     return sum(abs.(m(x) .- y).^p)
