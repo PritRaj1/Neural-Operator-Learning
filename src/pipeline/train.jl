@@ -11,6 +11,7 @@ function train_model(m, train_loader, test_loader, opt_state, loss, num_epochs, 
 
     @timed begin
         # Train the model
+        println("Training $model_name...")
         for epoch in 1:num_epochs
             train_loss = 0.0
             test_loss = 0.0

@@ -3,14 +3,15 @@ module loaders
 include("./data_reader.jl")
 include("../utils.jl")
 using .MATFileLoader: load_darcy_data
-using .UTILS: UnitGaussianNormaliser, encode, decode
+using .UTILS: createNormaliser, encode, decode
 using Flux
+using CUDA
 
 function get_darcy_loader(batch_size=32)
     a_train, u_train, a_test, u_test = load_darcy_data()
 
-    a_normaliser = UnitGaussianNormaliser(a_train)
-    u_normaliser = UnitGaussianNormaliser(u_train)
+    a_normaliser = createNormaliser(a_train)
+    u_normaliser = createNormaliser(u_train)
 
     # Normalise
     a_train = encode(a_normaliser, a_train)
@@ -28,8 +29,8 @@ function get_darcy_loader(batch_size=32)
     a_test = permutedims(a_test, [2, 3, 4, 1])
     u_test = permutedims(u_test, [2, 3, 4, 1])
     
-    train_loader = Flux.DataLoader((a_train, u_train), batchsize=batch_size, shuffle=true)
-    test_loader = Flux.DataLoader((a_test, u_test), batchsize=batch_size, shuffle=false)
+    train_loader = Flux.DataLoader((a_train, u_train) |> gpu, batchsize=batch_size, shuffle=true)
+    test_loader = Flux.DataLoader((a_test, u_test) |> gpu, batchsize=batch_size, shuffle=false)
 
     return train_loader, test_loader
 

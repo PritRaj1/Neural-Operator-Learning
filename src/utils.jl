@@ -10,29 +10,30 @@ function loss_fcn(m, x, y)
     return sum(abs.(m(x) .- y).^p)
 end
 
+eps = Float32(1e-5)
 
 ### Normaliser for zero mean and unit variance ###
 struct UnitGaussianNormaliser{T<:AbstractFloat}
-    mean::T
-    std::T
-    eps::T
+    μ::T
+    σ::T
+    ε::T
 end
 
-# Constructor, characterises the distribution of the data
-function UnitGaussianNormaliser(x::AbstractArray{T}, eps::T=1e-5) where {T<:AbstractFloat}
-    mean = Statistics.mean(x)
-    std = Statistics.std(x)
-    return UnitGaussianNormaliser(mean, std, eps)
+# Constructor, characterises the distribution of the data, takes 3D array
+function createNormaliser(x::AbstractArray)
+    data_mean = Statistics.mean(x)
+    data_std = Statistics.std(x)
+    return UnitGaussianNormaliser(data_mean, data_std, eps)
 end
 
 # Normalise to zero mean and unit variance
 function encode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
-    return (x .- normaliser.mean) ./ (normaliser.std .+ normaliser.eps)
+    return (x .- normaliser.μ) ./ (normaliser.σ .+ normaliser.ε)
 end
 
 # Denormalise
 function decode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
-    return x .* (normaliser.std .+ normaliser.eps) .+ normaliser.mean
+    return x .* (normaliser.σ .+ normaliser.ε) .+ normaliser.μ
 end
 
 # Log the loss to CSV
