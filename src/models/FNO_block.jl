@@ -11,7 +11,7 @@ using .FNO_layers: SpectralConv2d, MLP
 using ConfParser
 using NNlib
 
-conf = ConfParse("../../FNO_config.ini")
+conf = ConfParse("FNO_config.ini")
 parse_conf!(conf)
 
 width = parse(Int64, retrieve(conf, "Architecture", "channel_width"))

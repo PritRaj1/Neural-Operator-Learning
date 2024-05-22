@@ -15,7 +15,7 @@ using Flux: Conv, Dense
 using ConfParser
 using NNlib
 
-conf = ConfParse("../../FNO_config.ini")
+conf = ConfParse("FNO_config.ini")
 parse_conf!(conf)
 
 width = parse(Int, retrieve(conf, "Architecture", "channel_width"))

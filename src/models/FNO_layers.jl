@@ -8,7 +8,7 @@ using SpecialFunctions: erf
 using ConfParser
 using NNlib
 
-conf = ConfParse("../../FNO_config.ini")
+conf = ConfParse("FNO_config.ini")
 parse_conf!(conf)
 
 modes1 = parse(Int, retrieve(conf, "Architecture", "modes1"))

@@ -45,7 +45,7 @@ train_loader, test_loader = get_darcy_loader(batch_size)
 
 model = Dict(
     "CNN" => gpu(CNN(1,1)),
-    "FNO" => gpu(FNO(3,1))
+    "FNO" => gpu(FNO(3,1,4))
 )[MODEL_NAME]
 
 # Create logs directory if it doesn't exist
