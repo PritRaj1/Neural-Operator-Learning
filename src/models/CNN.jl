@@ -9,7 +9,6 @@ conf = ConfParse("CNN_config.ini")
 parse_conf!(conf)
 
 hidden_dim = parse(Int32, retrieve(conf, "Architecture", "hidden_dim"))
-noise_injection = parse(Float32, retrieve(conf, "Architecture", "noise_injection"))
 activation = retrieve(conf, "Architecture", "activation")
 
 struct CNN
@@ -23,7 +22,8 @@ act_fcn = Dict(
     "leakyrelu" => NNlib.leakyrelu,
     "tanh" => NNlib.hardtanh,
     "sigmoid" => NNlib.hardsigmoid,
-    "swish" => NNlib.hardswish
+    "swish" => NNlib.hardswish,
+    "gelu" => NNlib.gelu
 )[activation]
 
 # Construct the CNN model

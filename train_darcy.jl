@@ -39,12 +39,12 @@ using .TRAINER: train_model
 using .UTILS: loss_fcn
 using .ConvNN: CNN
 
-get_model = Dict(
-    "CNN" => CNN
-)[MODEL_NAME]
-
 train_loader, test_loader = get_darcy_loader(batch_size)
-model = gpu(get_model(1, 1))
+
+model = Dict(
+    "CNN" => gpu(CNN(1,1)),
+    "FNO" => gpu(FNO(3,1))
+)[MODEL_NAME]
 
 # Create logs directory if it doesn't exist
 if !isdir("logs")
