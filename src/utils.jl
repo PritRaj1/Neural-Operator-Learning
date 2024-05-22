@@ -1,6 +1,6 @@
 module UTILS
 
-export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss
+export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss, get_grid
 
 using Statistics
 
@@ -43,4 +43,19 @@ function log_loss(epoch, train_loss, test_loss, model_name)
     end
 end
 
+# Creates channels for spectral convolutions (x, y, 1, batch_size) -> (3, x, y, batch_size)
+function get_grid(x)
+    nx, ny, _, batch_size = size(x)
+    X = [x for x in range(0, stop=1, length=nx)]
+    Y = [y for y in range(0, stop=1, length=ny)]
+
+    gridx = repeat(reshape(X, nx, 1, 1, 1), 1, ny, 1, batch_size)
+    gridy = repeat(reshape(Y, 1, ny, 1, 1), nx, 1, 1, batch_size)
+
+    grid = cat(x, gridx, gridy, dims=3)
+
+    return permutedims(grid, [3, 1, 2, 4])
 end
+end
+
+
