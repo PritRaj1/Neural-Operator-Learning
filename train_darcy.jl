@@ -4,7 +4,7 @@ using ConfParser
 using CUDA
 using BSON: @save
 
-MODEL_NAME = "CNN"
+MODEL_NAME = "FNO"
 
 # Parse config
 conf = ConfParse(MODEL_NAME * "_config.ini")
@@ -31,6 +31,7 @@ ENV["min_LR"] = min_LR
 
 include("src/data_processing/data_loader.jl")
 include("src/models/CNN.jl")
+include("src/models/FNO.jl")
 include("src/utils.jl")
 include("src/pipeline/train.jl")
 
@@ -38,6 +39,7 @@ using .loaders: get_darcy_loader
 using .TRAINER: train_model
 using .UTILS: loss_fcn
 using .ConvNN: CNN
+using .FourierNO: FNO
 
 train_loader, test_loader = get_darcy_loader(batch_size)
 
