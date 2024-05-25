@@ -17,7 +17,6 @@ modes1 = parse(Int, retrieve(conf, "Architecture", "modes1"))
 modes2 = parse(Int, retrieve(conf, "Architecture", "modes2"))
 activation = retrieve(conf, "Architecture", "activation")
 width = parse(Int, retrieve(conf, "Architecture", "channel_width"))
-batch_size = parse(Int, retrieve(conf, "DataLoader", "batch_size"))
 
 # Activation mapping
 act_fcn = Dict(
@@ -43,7 +42,7 @@ function SpectralConv2d(in_channels::Int, out_channels::Int)
     return SpectralConv2d(weights1, weights2, in_channels, out_channels)
 end
 
-function compl_mul2d(input, weights, out_channels, size_x)
+function compl_mul2d(input, weights, out_channels, size_x, batch_size)
     # Multiply the input with the weights "xyib,xyio->xyob"
     output = @tullio out[x, y, o, b] := input[x, y, i, b] * weights[x, y, i, o]
     padding = zeros(ComplexF32, modes1, size_x-modes2, out_channels, batch_size)
@@ -56,8 +55,8 @@ function (m::SpectralConv2d)(x)
     x_FT = rfft(x, [1, 2]) 
     
     # Multiply relevant Fourier modes
-    out_FT_1 = compl_mul2d(x_FT[1:modes1, 1:modes2, :, :], m.w1, m.out_channels, size(x, 2))
-    out_FT_2 = compl_mul2d(x_FT[end-modes1+1:end, 1:modes2, :, :], m.w2, m.out_channels, size(x, 2))
+    out_FT_1 = compl_mul2d(x_FT[1:modes1, 1:modes2, :, :], m.w1, m.out_channels, size(x, 2), size(x, 4))
+    out_FT_2 = compl_mul2d(x_FT[end-modes1+1:end, 1:modes2, :, :], m.w2, m.out_channels, size(x, 2), size(x, 4))
     out_FT = cat(out_FT_1, out_FT_2, dims=1) 
     
     out_FT = cat(out_FT, zeros(ComplexF32, 1, size(x, 2), size(x, 3), size(x, 4)), dims=1)

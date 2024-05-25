@@ -3,10 +3,17 @@ This repository hosts two of my projects focused on operator learning for comple
 
 ## 1. The 2D Darcy Flow Problem
 
-<p align="center">
-  <img src="figures/true_darcy_flow.gif" alt="True Darcy Flow" width="45%">
-  <img src="figures/CNN_prediction.gif" alt="CNN Predicted Darcy Flow" width="45%">
-</p>
+<div style="display: flex; justify-content: center;">
+  <div style="padding-right: 10px;">
+    <img src="figures/true_darcy_flow.gif" alt="True Darcy Flow" width="30%">
+  </div>
+  <div style="padding-right: 10px;">
+    <img src="figures/CNN_prediction.gif" alt="CNN Predicted Darcy Flow" width="30%">
+  </div>
+  <div>
+    <img src="figures/FNO_prediction.gif" alt="CNN Predicted Darcy Flow" width="30%">
+  </div>
+</div>
 
 The problem considers learning the solution operator of the 2D Darcy flow problem, which is governed by the following equation:
 

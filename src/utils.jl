@@ -4,14 +4,9 @@ export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss, get_g
 
 using Statistics
 using CUDA, KernelAbstractions, Tullio
-using ConfParser
 using Flux
 
-conf = ConfParse("FNO_config.ini")
-parse_conf!(conf)
-
 p = parse(Float32, get(ENV, "p", "2.0"))
-batch_size = parse(Int, retrieve(conf, "DataLoader", "batch_size"))
 nx, ny = 32, 32
 
 function loss_fcn(m, x, y)
@@ -56,11 +51,12 @@ X = Float32.(range(0,1,nx))
 Y = Float32.(range(0,1,ny))
 X = reshape(X, 1, nx, 1, 1)
 Y = reshape(Y, 1, 1, ny, 1)
-gridx = repeat(X, 1, 1, ny, batch_size)
-gridy = repeat(Y, 1, nx, 1, batch_size)
-grid = cat(gridx, gridy, dims=1) |> gpu
 
 function get_grid(x)
+    batch_size = size(x, 4)
+    gridx = repeat(X, 1, 1, ny, batch_size)
+    gridy = repeat(Y, 1, nx, 1, batch_size)
+    grid = cat(gridx, gridy, dims=1) |> gpu
     x_reshaped = @tullio y[c, w, h, b] := x[w, h, c, b]
     return vcat(x_reshaped, grid)
     
