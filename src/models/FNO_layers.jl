@@ -6,8 +6,8 @@ using Flux: Conv, Dense
 using Flux
 using ConfParser
 using NNlib
-using CUDA, CUDAKernels, KernelAbstractions
-using CUDA.CUFFT: rfft, irfft
+using CUDA, KernelAbstractions
+using AbstractFFTs: rfft, irfft
 using Tullio
 
 conf = ConfParse("../../FNO_config.ini")
@@ -43,24 +43,27 @@ function SpectralConv2d(in_channels::Int, out_channels::Int)
     return SpectralConv2d(weights1, weights2, in_channels, out_channels)
 end
 
-function compl_mul2d(input, weights, in_channels, out_channels)
+function compl_mul2d(input, weights, out_channels, size_x)
     # Multiply the input with the weights "xyib,xyio->xyob"
-    return CUDA.@allowscalar @tullio out[x, y, o, b] := input[x, y, i, b] * weights[x, y, i, o]
+    output = @tullio out[x, y, o, b] := input[x, y, i, b] * weights[x, y, i, o]
+    padding = zeros(ComplexF32, modes1, size_x-modes2, out_channels, batch_size)
+    return cat(output, padding, dims=2)
 end
 
 function (m::SpectralConv2d)(x)
 
     # Fourier transform using cuFFT
     x_FT = rfft(x, [1, 2]) 
-
-    # Multiply relevant Fourier modes
-    out_FT_1 = compl_mul2d(x_FT[1:modes1, 1:modes2, :, :], m.w1, m.in_channels, m.out_channels)
-    out_FT_2 = compl_mul2d(x_FT[end-modes1+1:end, end-modes2+1:end, :, :], m.w2, m.in_channels, m.out_channels)
     
-    out_FT = cat(out_FT_1, out_FT_2, dims=1)
-
+    # Multiply relevant Fourier modes
+    out_FT_1 = compl_mul2d(x_FT[1:modes1, 1:modes2, :, :], m.w1, m.out_channels, size(x, 2))
+    out_FT_2 = compl_mul2d(x_FT[end-modes1+1:end, 1:modes2, :, :], m.w2, m.out_channels, size(x, 2))
+    out_FT = cat(out_FT_1, out_FT_2, dims=1) 
+    
+    out_FT = cat(out_FT, zeros(ComplexF32, 1, size(x, 2), size(x, 3), size(x, 4)), dims=1)
+    
     # Inverse fourier transform
-    return irfft(out_FT, [1, 2])
+    return irfft(out_FT, size(x, 2), [1, 2])
 end
 
 struct MLP
