@@ -10,7 +10,7 @@ using CUDA, KernelAbstractions
 using AbstractFFTs: rfft, irfft
 using Tullio
 
-conf = ConfParse("../../FNO_config.ini")
+conf = ConfParse("FNO_config.ini")
 parse_conf!(conf)
 
 modes1 = parse(Int, retrieve(conf, "Architecture", "modes1"))
@@ -88,25 +88,3 @@ Flux.@layer SpectralConv2d
 Flux.@layer MLP
 
 end
-
-# Test gradient computation
-using Flux
-using .FNO_layers: SpectralConv2d, MLP
-
-# Test the gradient computation for spect_conv
-
-# Set up the model
-model = SpectralConv2d(94, 94) |> gpu
-
-# Set up the input
-x = randn(32, 32, 94, 96) |> gpu
-
-
-function loss(model, x)
-    return sum(model(x))
-end
-
-# Compute the gradient of output w.r.t. params
-loss_val, grads = Flux.withgradient(m -> loss(m, x), model)
-
-println(grads[1])

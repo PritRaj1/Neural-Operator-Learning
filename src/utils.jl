@@ -1,10 +1,18 @@
 module UTILS
 
-export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss, get_grid, complexGeLU
+export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss, get_grid
 
-using Statistics, SpecialFunctions
+using Statistics
+using CUDA, KernelAbstractions, Tullio
+using ConfParser
+using Flux
+
+conf = ConfParse("FNO_config.ini")
+parse_conf!(conf)
 
 p = parse(Float32, get(ENV, "p", "2.0"))
+batch_size = parse(Int, retrieve(conf, "DataLoader", "batch_size"))
+nx, ny = 32, 32
 
 function loss_fcn(m, x, y)
     return sum(abs.(m(x) .- y).^p)
@@ -43,19 +51,18 @@ function log_loss(epoch, train_loss, test_loss, model_name)
     end
 end
 
-# Creates channels for spectral convolutions (x, y, 1, batch_size) -> (3, x, y, batch_size)
+# Creates grids for spectral convolutions (x, y, 1, batch_size) -> (3, x, y, batch_size)
+X = Float32.(range(0,1,nx))
+Y = Float32.(range(0,1,ny))
+X = reshape(X, 1, nx, 1, 1)
+Y = reshape(Y, 1, 1, ny, 1)
+gridx = repeat(X, 1, 1, ny, batch_size)
+gridy = repeat(Y, 1, nx, 1, batch_size)
+grid = cat(gridx, gridy, dims=1) |> gpu
+
 function get_grid(x)
-    nx, ny, _, batch_size = size(x)
-    X = [Float32.(x) for x in range(0, stop=1, length=nx)]
-    Y = [Float32.(y) for y in range(0, stop=1, length=ny)]
-
-    gridx = repeat(reshape(X, nx, 1, 1, 1), 1, ny, 1, batch_size)
-    gridy = repeat(reshape(Y, 1, ny, 1, 1), nx, 1, 1, batch_size)
-
-    grid = cat(x, gridx, gridy, dims=3)
-
-    return permutedims(grid, [3, 1, 2, 4])
+    x_reshaped = @tullio y[c, w, h, b] := x[w, h, c, b]
+    return vcat(x_reshaped, grid)
+    
 end
 end
-
-

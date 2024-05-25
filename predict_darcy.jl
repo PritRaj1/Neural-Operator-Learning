@@ -3,7 +3,7 @@ include("src/models/CNN.jl")
 using Plots; pythonplot()
 using Flux
 using BSON: @load
-using CUDA
+using CUDA, KernelAbstractions
 using .ConvNN: CNN
 using .loaders: get_darcy_loader
 

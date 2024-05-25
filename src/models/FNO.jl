@@ -10,12 +10,13 @@ using .UTILS: get_grid
 using .FNO_block: FNO_hidden_block
 using .FNO_layers: MLP
 
+using CUDA, KernelAbstractions, Tullio
 using Flux
 using Flux: Conv, Dense
 using ConfParser
 using NNlib
 
-conf = ConfParse("../../FNO_config.ini")
+conf = ConfParse("FNO_config.ini")
 parse_conf!(conf)
 
 width = parse(Int, retrieve(conf, "Architecture", "channel_width"))
@@ -56,24 +57,12 @@ end
 function (m::FNO)(x)
     x = get_grid(x)
     x = m.input_layer(x)
-    x = permutedims(x, [2, 3, 1, 4])
+    x = @tullio z[i, j, k, b] := x[k, i, j, b]
     x = m.hidden_layers(x)
     x = m.output_layer(x)
     return x
 end
 
-Flux.@layer FNO
+Flux.@functor FNO
 
 end
-
-# Test gradient computation
-
-using .FourierNO: FNO
-using Flux
-
-model = FNO(3, 1, 4)
-x = randn(32, 32, 1, 96)
-
-model(x)
-grads = Flux.gradient(model -> sum(model(x)), model)
-

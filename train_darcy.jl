@@ -1,7 +1,7 @@
+using CUDA, KernelAbstractions
 using Flux
 using Optimisers
 using ConfParser
-using CUDA
 using BSON: @save
 
 MODEL_NAME = "FNO"
