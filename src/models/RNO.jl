@@ -32,8 +32,7 @@ struct RNO
     output_layers
     hidden_layers
     dt::Float32
-    T::Float32
-    N::Int64
+    T::Int64
 end
 
 function createRNO(input_dim::Int64, output_dim::Int64, input_size::Int64)
@@ -49,11 +48,13 @@ function createRNO(input_dim::Int64, output_dim::Int64, input_size::Int64)
     out_layers = Chain(out_layers_list..., Dense(layer_output[end-1], layer_output[end]))
     hid_layers = Chain(hid_layers_list..., Dense(layer_hidden[end-1], layer_hidden[end]))
 
-    return RNO(out_layers, hid_layers,Float32.(1 / (input_size - 1)) , Float32.(input_size), input_size)
+    dt = Float32(1/(input_size-1))
+
+    return RNO(out_layers, hid_layers, dt, input_size)
 end
 
 function init_hidden(m::RNO, batch_size)
-    return zeros(Float32, n_hidden, batch_size) |> gpu
+    return zeros(Float32, n_hidden, batch_size) #|> gpu
 end
 
 function fwd_pass(m::RNO, x, y, hidden)
@@ -66,9 +67,8 @@ function fwd_pass(m::RNO, x, y, hidden)
     h = m.hidden_layers(h) 
     h = (h .* m.dt) .+ h0
     
-    # b = (y-x) / dt, where dt = 1 / (in_size - 1). Using m.T to avoid division by zero
-    b = (y .- x) .* (m.T-1) 
-    output = vcat(y, b, h)
+    # Output
+    output = vcat(y, (y .- x) ./ m.dt, h)
     output = m.output_layers(output)
 
     return output, h
@@ -80,7 +80,7 @@ function (m::RNO)(x, y_true)
     y = reshape(y_true[1, :], 1, length(y_true[1, :]))
 
     hidden = init_hidden(m, size(x)[end])
-    for t in 2:m.N
+    for t in 2:m.T
         out, hidden = fwd_pass(m, x[t, :], x[t-1, :], hidden)
         y = vcat(y, out)
     end
@@ -90,3 +90,13 @@ end
 Flux.@functor RNO
 
 end
+
+# Test
+using .RecurrentNO: createRNO
+
+model = createRNO(1, 1, 3) 
+
+x = rand(Float32, 251, 5)
+y = rand(Float32, 251, 5)
+
+model(x, y)
