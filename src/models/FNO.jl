@@ -21,6 +21,7 @@ parse_conf!(conf)
 
 width = parse(Int, retrieve(conf, "Architecture", "channel_width"))
 activation = retrieve(conf, "Architecture", "activation")
+num_blocks = parse(Int, retrieve(conf, "Architecture", "num_hidden_blocks"))
 
 # Activation mapping
 act_fcn = Dict(
@@ -39,19 +40,14 @@ struct FNO
 end
 
 # Construct the FNO model
-function FNO(in_channels::Int, out_channels::Int, num_blocks::Int)
+function FNO(in_channels::Int, out_channels::Int)
     phi = act_fcn
 
     input_layer = Dense(3 => width, phi)
-    hidden_blocks = Chain(
-        FNO_hidden_block(width, width),
-        FNO_hidden_block(width, width),
-        FNO_hidden_block(width, width),
-        FNO_hidden_block(width, width)
-    )
+    hidden_blocks = [FNO_hidden_block(width, width) for _ in 1:num_blocks]
     
     output_MLP =  MLP(width, 1, width * 4)
-    return FNO(input_layer, hidden_blocks, output_MLP)
+    return FNO(input_layer, Chain(hidden_blocks...), output_MLP)
 end
 
 function (m::FNO)(x)

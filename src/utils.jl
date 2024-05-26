@@ -1,6 +1,6 @@
 module UTILS
 
-export LpLoss, loss_fcn, UnitGaussianNormaliser, unit_encode, unit_decode, MinMaxNormaliser, minmax_encode, minmax_decode, log_loss, get_grid
+export LpLoss, loss_fcn, sequence_loss_fcn, UnitGaussianNormaliser, unit_encode, unit_decode, MinMaxNormaliser, minmax_encode, minmax_decode, log_loss, get_grid
 using Statistics
 using CUDA, KernelAbstractions, Tullio
 using Flux
@@ -10,6 +10,10 @@ nx, ny = 32, 32
 
 function loss_fcn(m, x, y)
     return sum(abs.(m(x) .- y).^p)
+end
+
+function sequence_loss_fcn(m, x, y)
+    return sum(abs.(m(x, y) .- y).^p)
 end
 
 eps = Float32(1e-5)

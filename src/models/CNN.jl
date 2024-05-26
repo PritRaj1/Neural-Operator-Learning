@@ -26,7 +26,6 @@ act_fcn = Dict(
     "gelu" => NNlib.gelu
 )[activation]
 
-# Construct the CNN model
 function CNN(in_channels::Int, out_channels::Int)
     phi = act_fcn
 

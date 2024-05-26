@@ -4,7 +4,7 @@ using Optimisers
 using ConfParser
 using BSON: @save
 
-MODEL_NAME = "FNO"
+MODEL_NAME = "RNO"
 
 # Parse config
 conf = ConfParse(MODEL_NAME * "_config.ini")
@@ -30,22 +30,21 @@ ENV["LR"] = string(LR)
 ENV["min_LR"] = min_LR
 
 include("src/data_processing/data_loader.jl")
-include("src/models/CNN.jl")
-include("src/models/FNO.jl")
+include("src/models/RNO.jl")
 include("src/utils.jl")
 include("src/pipeline/train.jl")
 
-using .loaders: get_darcy_loader
+using .loaders: get_visco_loader
 using .TRAINER: train_model
-using .UTILS: loss_fcn
-using .ConvNN: CNN
-using .FourierNO: FNO
+using .UTILS: sequence_loss_fcn
+using .RecurrentNO: createRNO
 
-train_loader, test_loader = get_darcy_loader(batch_size)
+train_loader, test_loader = get_visco_loader(batch_size)
+
+in_size = size(first(train_loader)[2], 1)
 
 model = Dict(
-    "CNN" => gpu(CNN(1,1)),
-    "FNO" => gpu(FNO(3,1))
+    "RNO" => gpu(createRNO(1, 1, in_size))
 )[MODEL_NAME]
 
 # Create logs directory if it doesn't exist
@@ -69,7 +68,7 @@ opt_state = Dict(
     "sgd" => Optimisers.setup(Optimisers.Descent(LR), model)
 )[optimizer_type]
 
-model = train_model(model, train_loader, test_loader, opt_state, loss_fcn, num_epochs, MODEL_NAME)
+model = train_model(model, train_loader, test_loader, opt_state, sequence_loss_fcn, num_epochs, MODEL_NAME)
 
 # Save the model
 model = model |> cpu
