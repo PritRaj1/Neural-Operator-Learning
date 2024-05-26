@@ -1,7 +1,6 @@
 module UTILS
 
-export LpLoss, loss_fcn, UnitGaussianNormaliser, encode, decode, log_loss, get_grid
-
+export LpLoss, loss_fcn, UnitGaussianNormaliser, unit_encode, unit_decode, MinMaxNormaliser, minmax_encode, minmax_decode, log_loss, get_grid
 using Statistics
 using CUDA, KernelAbstractions, Tullio
 using Flux
@@ -22,21 +21,40 @@ struct UnitGaussianNormaliser{T<:AbstractFloat}
     ε::T
 end
 
+# Normalise to zero mean and unit variance
+function unit_encode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
+    return (x .- normaliser.μ) ./ (normaliser.σ .+ normaliser.ε)
+end
+
+# Denormalise
+function unit_decode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
+    return x .* (normaliser.σ .+ normaliser.ε) .+ normaliser.μ
+end
+
 # Constructor, characterises the distribution of the data, takes 3D array
-function createNormaliser(x::AbstractArray)
+function UnitGaussianNormaliser(x::AbstractArray)
     data_mean = Statistics.mean(x)
     data_std = Statistics.std(x)
     return UnitGaussianNormaliser(data_mean, data_std, eps)
 end
 
-# Normalise to zero mean and unit variance
-function encode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
-    return (x .- normaliser.μ) ./ (normaliser.σ .+ normaliser.ε)
+struct MinMaxNormaliser{T<:AbstractFloat}
+    min::T
+    max::T
 end
 
-# Denormalise
-function decode(normaliser::UnitGaussianNormaliser, x::AbstractArray)
-    return x .* (normaliser.σ .+ normaliser.ε) .+ normaliser.μ
+function minmax_encode(normaliser::MinMaxNormaliser, x::AbstractArray)
+    return (x .- normaliser.min) ./ (normaliser.max - normaliser.min)
+end
+
+function minmax_decode(normaliser::MinMaxNormaliser, x::AbstractArray)
+    return x .* (normaliser.max - normaliser.min) .+ normaliser.min
+end
+
+function MinMaxNormaliser(x::AbstractArray)
+    data_min = minimum(x)
+    data_max = maximum(x)
+    return MinMaxNormaliser(data_min, data_max)
 end
 
 # Log the loss to CSV
