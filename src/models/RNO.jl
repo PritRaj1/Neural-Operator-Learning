@@ -68,7 +68,8 @@ function fwd_pass(m::RNO, x, y, hidden)
     h = (h .* m.dt) .+ h0
     
     # Output
-    output = vcat(y, (y .- x) ./ m.dt, h)
+    b = (y .- x) ./ m.dt
+    output = vcat(y, b, h)
     output = m.output_layers(output)
 
     return output, h
@@ -90,13 +91,3 @@ end
 Flux.@functor RNO
 
 end
-
-# Test
-using .RecurrentNO: createRNO
-
-model = createRNO(1, 1, 3) 
-
-x = rand(Float32, 251, 5)
-y = rand(Float32, 251, 5)
-
-model(x, y)
