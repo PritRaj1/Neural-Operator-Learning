@@ -12,8 +12,8 @@ Models implemented:
 ## 1. The 2D Darcy Flow Problem
 
 <p align="center">
-  <img src="figures/true_darcy_flow.gif" alt="True Darcy Flow" width="30%" style="padding-right: 10px;">
-  <img src="figures/CNN_prediction.gif" alt="CNN Predicted Darcy Flow" width="30%" style="padding-right: 10px;">
+  <img src="figures/true_darcy_flow.gif" alt="True Darcy Flow" width="30%" style="padding-right: 20px;">
+  <img src="figures/CNN_prediction.gif" alt="CNN Predicted Darcy Flow" width="30%" style="padding-right: 20px;">
   <img src="figures/FNO_prediction.gif" alt="CNN Predicted Darcy Flow" width="30%">
 </p>
 
@@ -45,7 +45,7 @@ using the Fourier Nueral Operator (FNO) presented in the paper: [Fourier Neural 
 ## 2. Unit Cell Problem with Viscoelastic Constitutive Relation
 
 <p align="center">
-  <img src="figures/RNO_visco_prediction.gif" alt="RNO Predicted Stress Field" width="30%" style="padding-right: 10px;">
+  <img src="figures/RNO_visco_prediction.gif" alt="RNO Predicted Stress Field" width="50%" style="padding-right: 10px;">
 </p>
 
 Consider the following unit-cell problem governed by the equations:
