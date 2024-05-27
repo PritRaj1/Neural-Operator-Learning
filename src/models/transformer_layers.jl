@@ -2,7 +2,7 @@ module Transform_Layers
 
 export encoder_layers, decoder_layers
 
-using NNlib: softmax, batched_mul, batched_transpose
+using NNlib: softmax, batched_mul
 using Flux
 using Flux: Chain, BatchNorm, LayerNorm, Dense, Dropout
 using ConfParser
@@ -20,6 +20,10 @@ dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
 d_k = d_model ÷ nhead
 query_mul = Float32.([d_k ^ (-0.5)]) |> gpu
 sqrt_d_model = Float32.([sqrt(d_model)]) |> gpu
+
+function batched_transpose(x)
+    return @tullio y[i, j, k] := x[j, i, k]
+end
 
 function scaled_dot_product_attention(query, key, value)
     key_T = batched_transpose(key)
@@ -87,9 +91,10 @@ end
 function (l::decoder_layer)((x, memory))
     x = batched_transpose(x)
     memory = batched_transpose(memory)
-    x = l.norm1(batched_transpose(x + l.self_attn(x)))
+    x = l.norm1(batched_transpose(x .+ l.self_attn(x)))
     x = batched_transpose(x)
-    x = l.norm2(batched_transpose(x + l.mh_attn(x, memory, memory)))
+    x = batched_transpose(x .+ l.mh_attn(x, memory, memory))
+    x = l.norm2(x)
     return l.norm3(x + l.feed_forward(x))
 end
 
