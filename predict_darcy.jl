@@ -6,7 +6,6 @@ using Plots; pythonplot()
 using Flux
 using BSON: @load
 using CUDA, KernelAbstractions
-using .ConvNN: CNN
 using .loaders: get_darcy_loader
 
 train_loader, test_loader = get_darcy_loader(1)
