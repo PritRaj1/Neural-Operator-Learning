@@ -9,7 +9,6 @@ using NNlib
 using ConfParser
 using Tullio
 
-
 conf = ConfParse("RNO_config.ini")
 parse_conf!(conf)
 
