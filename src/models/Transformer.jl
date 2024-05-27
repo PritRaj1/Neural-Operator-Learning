@@ -30,7 +30,7 @@ function PositionalEncoding()
     div_term = reshape(div_term, 1, floor(Int, d_model/2))
     pe_vector[1:2:end, :] = transpose(sin.(position .* div_term))
     pe_vector[2:2:end, :] = transpose(cos.(position .* div_term))
-    pe_vector = Float32.(reshape(pe_vector, d_model, max_len, 1))
+    pe_vector = Float32.(reshape(pe_vector, d_model, max_len, 1)) |> gpu
     PositionEncoding(pe_vector)
 end
 
@@ -72,15 +72,3 @@ end
 Flux.@functor Transformer
 
 end
-
-# Test model
-
-using .TransformerModel: createTransformer
-using CUDA
-
-model = createTransformer(251) #|> gpu
-x = rand(Float32, 251, 5) #|> gpu
-y = rand(Float32, 251, 5) #|> gpu
-
-println(size(model(x, y)))
-println(size(y))

@@ -16,10 +16,11 @@ nhead = parse(Int, retrieve(conf, "Architecture", "nhead"))
 dim_feedforward = parse(Int, retrieve(conf, "Architecture", "dim_feedforward"))
 max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
-d_k = d_model ÷ nhead #|> gpu
+d_k = d_model ÷ nhead
+query_mul = Float32.(d_k ^ (-0.5)) |> gpu
 
 function multi_head_attention(query, key, value; mask=nothing)
-    query = query * Float32.(d_k ^ (-0.5))
+    query = query * query_mul
     out, _ = dot_product_attention(query, key, value; mask=mask)
     return out
 end
