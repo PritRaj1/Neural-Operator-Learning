@@ -2,11 +2,12 @@ module Transform_Layers
 
 export encoder_layers, decoder_layers
 
-using NNlib: dot_product_attention
+using NNlib: softmax, batched_mul, batched_transpose
 using Flux
 using Flux: Chain, BatchNorm, LayerNorm, Dense, Dropout
 using ConfParser
 using CUDA, KernelAbstractions
+using Tullio
 
 conf = ConfParse("Transformer_config.ini")
 parse_conf!(conf)
@@ -17,12 +18,19 @@ dim_feedforward = parse(Int, retrieve(conf, "Architecture", "dim_feedforward"))
 max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
 d_k = d_model ÷ nhead
-query_mul = Float32.(d_k ^ (-0.5)) |> gpu
+query_mul = Float32.([d_k ^ (-0.5)]) #|> gpu
+sqrt_d_model = Float32.([sqrt(d_model)]) #|> gpu
 
-function multi_head_attention(query, key, value; mask=nothing)
-    query = query * query_mul
-    out, _ = dot_product_attention(query, key, value; mask=mask)
-    return out
+function scaled_dot_product_attention(query, key, value)
+    scores = @tullio z[i, j, b] := query[i, j, b] * key[k, t, b]
+    scores = scores ./ sqrt_d_model
+    p_attn = softmax(scores, dims=1)
+    return @tullio c[i, j, b] := p_attn[i, j, b] * value[i, t, b]
+end
+
+function multi_head_attention(query, key, value)
+    query = query .* query_mul
+    return scaled_dot_product_attention(query, key, value)
 end
 
 function self_attention(x)

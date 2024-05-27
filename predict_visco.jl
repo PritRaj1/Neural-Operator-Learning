@@ -1,5 +1,6 @@
 include("src/data_processing/data_loader.jl")
 include("src/models/RNO.jl")
+include("src/models/Transformer.jl")
 
 using Plots; pythonplot()
 using Flux
@@ -9,7 +10,7 @@ using .loaders: get_visco_loader
 
 train_loader, test_loader = get_visco_loader(1)
 
-MODEL_NAME = "RNO"
+MODEL_NAME = "Transformer"
 
 # Load the model
 @load "trained_models/$MODEL_NAME.bson" model
