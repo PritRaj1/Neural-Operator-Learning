@@ -31,7 +31,7 @@ act_fcn = Dict(
 struct RNO
     output_layers
     hidden_layers
-    dt::Float32
+    dt
     T::Int64
 end
 
@@ -48,13 +48,13 @@ function createRNO(input_dim::Int64, output_dim::Int64, input_size::Int64)
     out_layers = Chain(out_layers_list..., Dense(layer_output[end-1], layer_output[end]))
     hid_layers = Chain(hid_layers_list..., Dense(layer_hidden[end-1], layer_hidden[end]))
 
-    dt = Float32(1/(input_size-1))
+    dt = Float32.([1/(input_size-1)])
 
     return RNO(out_layers, hid_layers, dt, input_size)
 end
 
 function init_hidden(m::RNO, batch_size)
-    return zeros(Float32, n_hidden, batch_size) #|> gpu
+    return zeros(Float32, n_hidden, batch_size) |> gpu
 end
 
 function fwd_pass(m::RNO, x, y, hidden)
@@ -65,11 +65,10 @@ function fwd_pass(m::RNO, x, y, hidden)
     h0 = init_hidden(m, size(x,2))
     h = vcat(y, hidden)
     h = m.hidden_layers(h) 
-    h = (h .* m.dt) .+ h0
+    h = (h .* m.dt) + h0
     
     # Output
-    b = (y .- x) ./ m.dt
-    output = vcat(y, b, h)
+    output = vcat(y, (y - x) ./ m.dt, h)
     output = m.output_layers(output)
 
     return output, h
