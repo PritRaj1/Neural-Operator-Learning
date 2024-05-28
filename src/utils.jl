@@ -1,9 +1,10 @@
 module UTILS
 
-export LpLoss, loss_fcn, sequence_loss_fcn, UnitGaussianNormaliser, unit_encode, unit_decode, MinMaxNormaliser, minmax_encode, minmax_decode, log_loss, get_grid
+export loss_fcn, sequence_loss_fcn, UnitGaussianNormaliser, unit_encode, unit_decode, MinMaxNormaliser, minmax_encode, minmax_decode, log_loss, get_grid
 using Statistics
 using CUDA, KernelAbstractions, Tullio
 using Flux
+using NNlib: softmax
 
 p = parse(Float32, get(ENV, "p", "2.0"))
 nx, ny = 32, 32

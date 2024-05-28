@@ -1,6 +1,6 @@
 module TransformerModel
 
-export createTransformer
+export createTransformer, inference
 
 include("./transformer_layers.jl")
 
@@ -18,7 +18,7 @@ num_encoder_layers = parse(Int, retrieve(conf, "Architecture", "num_encoder_laye
 num_decoder_layers = parse(Int, retrieve(conf, "Architecture", "num_decoder_layers"))
 max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
-num_history = parse(Int, retrieve(conf, "Architecture", "num_history"))
+vocab_size = parse(Int, retrieve(conf, "Architecture", "vocab_size"))
 
 struct PositionEncoding
     pe_vector
@@ -47,31 +47,36 @@ struct Transformer
     output_layer
 end
 
-function createTransformer(tgt_size)
+function createTransformer()
     position_encoding = PositionalEncoding()
     encoder = [encoder_layers() for _ in 1:num_encoder_layers]
     decoder = [decoder_layers() for _ in 1:num_decoder_layers]
-    output_layer = Dense(d_model, tgt_size)
-    Transformer(position_encoding, Chain(encoder...), Chain(decoder...), output_layer)
+    output_layer = Dense(d_model, 1)
+
+    return Transformer(position_encoding, Chain(encoder...), Chain(decoder...), output_layer)
 end
+
 
 function (m::Transformer)(src, tgt)
     
-    # Predict from first num_history time steps
-    y = reshape(tgt[1:num_history, :], num_history, size(tgt)[end])
+    # Predict from first value
+    prediction = reshape(tgt[1, :], 1, length(tgt[1, :]))
 
     src = m.position_encoding(src)
-    tgt = m.position_encoding(y)
-
     memory = m.encoder(src)
-    output = m.decoder((tgt, memory))
-    output = m.output_layer(output)
-    output = output[:, end, :]
+
+    for i in 2:size(tgt, 1)
+        y = m.position_encoding(prediction)
+        output = m.decoder((y, memory))
+        output = m.output_layer(output)
+        prediction = vcat(prediction, output[:, end, :])
+    end
     
-    return reshape(output, size(output, 1), size(output)[end])
+    return prediction
 
 end
 
 Flux.@functor Transformer
 
 end
+

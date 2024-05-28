@@ -45,8 +45,8 @@ using the Fourier Nueral Operator (FNO) presented in the paper: [Fourier Neural 
 ## 2. Unit Cell Problem with Viscoelastic Constitutive Relation
 
 <p align="center">
-<img src="figures/Transformer_visco_prediction.gif" alt="RNO Predicted Stress Field" width="50%" style="padding-right: 10px;">
-<img src="figures/RNO_visco_prediction.gif" alt="RNO Predicted Stress Field" width="50%">
+<img src="figures/Transformer_visco_prediction.gif" alt="RNO Predicted Stress Field" width="48%" style="padding-right: 20px;">
+<img src="figures/RNO_visco_prediction.gif" alt="RNO Predicted Stress Field" width="48%">
 </p>
 
 Consider the following unit-cell problem governed by the equations:

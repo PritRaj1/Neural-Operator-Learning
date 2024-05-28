@@ -47,7 +47,7 @@ in_size = size(first(train_loader)[2], 1)
 
 model = Dict(
     "RNO" => gpu(createRNO(1, 1, in_size)),
-    "Transformer" => gpu(createTransformer(in_size))
+    "Transformer" => gpu(createTransformer())
 )[MODEL_NAME]
 
 # Create logs directory if it doesn't exist

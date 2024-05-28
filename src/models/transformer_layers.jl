@@ -6,8 +6,7 @@ using NNlib: softmax, batched_mul
 using Flux
 using Flux: Chain, BatchNorm, LayerNorm, Dense, Dropout
 using ConfParser
-using CUDA, KernelAbstractions
-using Tullio
+using CUDA, KernelAbstractions, Tullio
 
 conf = ConfParse("Transformer_config.ini")
 parse_conf!(conf)
@@ -17,30 +16,52 @@ nhead = parse(Int, retrieve(conf, "Architecture", "nhead"))
 dim_feedforward = parse(Int, retrieve(conf, "Architecture", "dim_feedforward"))
 max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
+activation = retrieve(conf, "Architecture", "activation")
 d_k = d_model ÷ nhead
 query_mul = Float32.([d_k ^ (-0.5)]) |> gpu
 sqrt_d_model = Float32.([sqrt(d_model)]) |> gpu
 
-function batched_transpose(x)
-    return @tullio y[i, j, k] := x[j, i, k]
+# Activation mapping
+act_fcn = Dict(
+    "relu" => NNlib.relu,
+    "leakyrelu" => NNlib.leakyrelu,
+    "tanh" => NNlib.hardtanh,
+    "sigmoid" => NNlib.hardsigmoid,
+    "swish" => NNlib.hardswish,
+    "gelu" => NNlib.gelu,
+    "selu" => NNlib.selu,
+)[activation]
+
+struct mh_attn
+    Wq
+    Wk
+    Wv
+end
+
+function multi_head_attention()
+    Wq = Dense(d_model, d_model, act_fcn)
+    Wk = Dense(d_model, d_model, act_fcn)
+    Wv = Dense(d_model, d_model, act_fcn)
+    return mh_attn(Wq, Wk, Wv)
 end
 
 function scaled_dot_product_attention(query, key, value)
-    key_T = batched_transpose(key)
-    scores = batched_mul(query, key_T)
+    scores = @tullio k[i, j, b] := query[i, j, b] * key[i, t, b]
     scores = scores ./ sqrt_d_model
     p_attn = softmax(scores, dims=1)
-    return batched_mul(p_attn, value)
+    return @tullio out[i, j, b] := p_attn[i, j, b] * value[i, t, b]
 end
 
-function multi_head_attention(query, key, value)
+function (att::mh_attn)(x, y, z)
+    query = att.Wq(x)
+    key = att.Wk(y)
+    value = att.Wv(z)
     query = query .* query_mul
-    return scaled_dot_product_attention(query, key, value)
+    out = scaled_dot_product_attention(query, key, value)
+    return out
 end
 
-function self_attention(x)
-    return multi_head_attention(x, x, x)
-end
+Flux.@functor mh_attn
 
 struct encoder_layer
     self_attn
@@ -58,16 +79,15 @@ function encoder_layers()
     ) 
     norm1 = LayerNorm(d_model)
     norm2 = LayerNorm(d_model)
-    encoder_layer(self_attention, feed_forward, norm1, norm2)
+    encoder_layer(multi_head_attention(), feed_forward, norm1, norm2)
 end
 
 function (l::encoder_layer)(x)
-    x = l.norm1(x + l.self_attn(x))
+    x = l.norm1(x + l.self_attn(x, x, x))
     return l.norm2(x + l.feed_forward(x))
 end
 
 struct decoder_layer
-    self_attn
     mh_attn
     feed_forward
     norm1
@@ -77,24 +97,20 @@ end
 
 function decoder_layers()
     feed_forward = Chain(
-        Dense(d_model, dim_feedforward),
+        Dense(d_model, dim_feedforward, act_fcn),
         Dropout(dropout),
-        Dense(dim_feedforward, d_model),
+        Dense(dim_feedforward, d_model, act_fcn),
         Dropout(dropout)
     ) 
     norm1 = LayerNorm(d_model)
     norm2 = LayerNorm(d_model)
     norm3 = LayerNorm(d_model)
-    decoder_layer(self_attention, multi_head_attention, feed_forward, norm1, norm2, norm3)
+    decoder_layer(multi_head_attention(), feed_forward, norm1, norm2, norm3)
 end
 
 function (l::decoder_layer)((x, memory))
-    x = batched_transpose(x)
-    memory = batched_transpose(memory)
-    x = l.norm1(batched_transpose(x .+ l.self_attn(x)))
-    x = batched_transpose(x)
-    x = batched_transpose(x .+ l.mh_attn(x, memory, memory))
-    x = l.norm2(x)
+    x = l.norm1(x .+ l.mh_attn(x, x, x))
+    x = l.norm2(x .+ l.mh_attn(x, memory, memory))
     return l.norm3(x + l.feed_forward(x))
 end
 
