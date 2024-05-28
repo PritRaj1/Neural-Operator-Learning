@@ -49,5 +49,5 @@ anim = @animate for i in 1:(num_samples + delay)
 end
 
 # Save the animation to file
-gif(anim, "figures/RNO_visco_prediction.gif", fps=15)
+gif(anim, "figures/$MODEL_NAME" * "_visco_prediction.gif", fps=15)
 

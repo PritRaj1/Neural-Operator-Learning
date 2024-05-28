@@ -18,6 +18,7 @@ num_encoder_layers = parse(Int, retrieve(conf, "Architecture", "num_encoder_laye
 num_decoder_layers = parse(Int, retrieve(conf, "Architecture", "num_decoder_layers"))
 max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
+num_history = parse(Int, retrieve(conf, "Architecture", "num_history"))
 
 struct PositionEncoding
     pe_vector
@@ -36,7 +37,7 @@ end
 
 function (pe::PositionEncoding)(x)
     x = reshape(x, 1, size(x, 1), size(x, 2)) 
-    return x .+ pe.pe_vector[:, 1:size(x, 1), :]
+    return x .+ pe.pe_vector[:, 1:size(x, 2), :]
 end
 
 struct Transformer
@@ -55,8 +56,9 @@ function createTransformer(tgt_size)
 end
 
 function (m::Transformer)(src, tgt)
-    # Predict from first time step
-    y = reshape(tgt[1, :], 1, length(tgt[1, :]))
+    
+    # Predict from first num_history time steps
+    y = reshape(tgt[1:num_history, :], num_history, size(tgt)[end])
 
     src = m.position_encoding(src)
     tgt = m.position_encoding(y)
@@ -64,7 +66,8 @@ function (m::Transformer)(src, tgt)
     memory = m.encoder(src)
     output = m.decoder((tgt, memory))
     output = m.output_layer(output)
-
+    output = output[:, end, :]
+    
     return reshape(output, size(output, 1), size(output)[end])
 
 end
