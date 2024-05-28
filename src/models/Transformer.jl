@@ -53,7 +53,7 @@ function createTransformer()
     decoder = [decoder_layers() for _ in 1:num_decoder_layers]
     output_layer = Dense(d_model, 1)
 
-    return Transformer(position_encoding, Chain(encoder...), Chain(decoder...), output_layer)
+    return Transformer(position_encoding, Chain(encoder...), decoder, output_layer)
 end
 
 
@@ -67,8 +67,10 @@ function (m::Transformer)(src, tgt)
 
     for i in 2:size(tgt, 1)
         y = m.position_encoding(prediction)
-        output = m.decoder((y, memory))
-        output = m.output_layer(output)
+        for layer in m.decoder
+            y = layer(y, memory)
+        end
+        output = m.output_layer(y)
         prediction = vcat(prediction, output[:, end, :])
     end
     

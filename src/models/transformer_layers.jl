@@ -79,7 +79,7 @@ function encoder_layers()
     ) 
     norm1 = LayerNorm(d_model)
     norm2 = LayerNorm(d_model)
-    encoder_layer(multi_head_attention(), feed_forward, norm1, norm2)
+    return encoder_layer(multi_head_attention(), feed_forward, norm1, norm2)
 end
 
 function (l::encoder_layer)(x)
@@ -105,17 +105,17 @@ function decoder_layers()
     norm1 = LayerNorm(d_model)
     norm2 = LayerNorm(d_model)
     norm3 = LayerNorm(d_model)
-    decoder_layer(multi_head_attention(), feed_forward, norm1, norm2, norm3)
+    return decoder_layer(multi_head_attention(), feed_forward, norm1, norm2, norm3)
 end
 
-function (l::decoder_layer)((x, memory))
-    x = l.norm1(x .+ l.mh_attn(x, x, x))
-    x = l.norm2(x .+ l.mh_attn(x, memory, memory))
+function (l::decoder_layer)(x, memory)
+    x = l.norm1(x + l.mh_attn(x, x, x))
+    x = l.norm2(x + l.mh_attn(x, memory, memory))
     return l.norm3(x + l.feed_forward(x))
 end
 
-Flux.@functor encoder_layer
-Flux.@functor decoder_layer
+Flux.@layer encoder_layer
+Flux.@layer decoder_layer
 
 end
 
