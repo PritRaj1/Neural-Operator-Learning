@@ -18,8 +18,8 @@ max_len = parse(Int, retrieve(conf, "Architecture", "max_len"))
 dropout = parse(Float32, retrieve(conf, "Architecture", "dropout"))
 activation = retrieve(conf, "Architecture", "activation")
 d_k = d_model ÷ nhead
-query_mul = Float32.([d_k ^ (-0.5)]) |> gpu
-sqrt_d_model = Float32.([sqrt(d_model)]) |> gpu
+query_mul = Float32.([d_k ^ (-0.5)]) 
+sqrt_d_model = Float32.([sqrt(d_model)]) 
 
 # Activation mapping
 act_fcn = Dict(
@@ -36,28 +36,31 @@ struct mh_attn
     Wq
     Wk
     Wv
+    sqrt_D
+    query_M
 end
 
 function multi_head_attention()
     Wq = Dense(d_model, d_model, act_fcn)
     Wk = Dense(d_model, d_model, act_fcn)
     Wv = Dense(d_model, d_model, act_fcn)
-    return mh_attn(Wq, Wk, Wv)
+    return mh_attn(Wq, Wk, Wv, sqrt_d_model, query_mul)
 end
 
-function scaled_dot_product_attention(query, key, value)
+function scaled_dot_product_attention(query, key, value, sd)
     scores = @tullio k[i, j, b] := query[i, j, b] * key[i, t, b]
-    scores = scores ./ sqrt_d_model
+    scores = scores ./ sd
     p_attn = softmax(scores, dims=1)
     return @tullio out[i, j, b] := p_attn[i, j, b] * value[i, t, b]
 end
 
 function (att::mh_attn)(x, y, z)
+    # Print device
     query = att.Wq(x)
     key = att.Wk(y)
     value = att.Wv(z)
-    query = query .* query_mul
-    out = scaled_dot_product_attention(query, key, value)
+    query = query .* att.query_M
+    out = scaled_dot_product_attention(query, key, value, att.sqrt_D)
     return out
 end
 
@@ -72,9 +75,9 @@ end
 
 function encoder_layers()
     feed_forward = Chain(
-        Dense(d_model, dim_feedforward),
+        Dense(d_model, dim_feedforward, act_fcn),
         Dropout(dropout),
-        Dense(dim_feedforward, d_model),
+        Dense(dim_feedforward, d_model, act_fcn),
         Dropout(dropout)
     ) 
     norm1 = LayerNorm(d_model)

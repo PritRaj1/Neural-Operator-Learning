@@ -7,6 +7,7 @@ using Flux
 using BSON: @load
 using CUDA, KernelAbstractions
 using .loaders: get_visco_loader
+using ConfParser
 
 train_loader, test_loader = get_visco_loader(1)
 
